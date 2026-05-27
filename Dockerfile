@@ -3,6 +3,21 @@ FROM runpod/worker-comfyui:5.5.1-base
 # Set environment variables
 ENV COMFYUI_PATH=/comfyui
 
+# Install system dependencies needed for git/wget if not already present
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install ComfyUI-fal-API custom node
+WORKDIR ${COMFYUI_PATH}/custom_nodes
+
+RUN git clone https://github.com/gokayfem/ComfyUI-fal-API.git
+
+WORKDIR ${COMFYUI_PATH}/custom_nodes/ComfyUI-fal-API
+
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
 # Download models
 WORKDIR ${COMFYUI_PATH}/models
 
