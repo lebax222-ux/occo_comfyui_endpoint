@@ -4,7 +4,8 @@
 # Build (must be linux/amd64 for RunPod):
 #   docker build --platform linux/amd64 -t YOUR_USER/qwen-image-edit-2511:latest .
 #
-# Image is large (~30GB+). Prefer RunPod "Start from GitHub Repo" if local disk is tight.
+# Image is large (~30GB+). Prefer building locally / Docker Hub if RunPod
+# GitHub builds hit the 30-minute docker-build timeout.
 FROM runpod/worker-comfyui:5.8.6-base
 
 # Diffusion — FP8 mixed (~20.5 GB). Use a 24GB+ GPU (e.g. RTX 4090).
@@ -31,3 +32,7 @@ RUN comfy model download \
     --url https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors \
     --relative-path models/loras \
     --filename Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors
+
+# Keep the official worker entrypoint (starts ComfyUI + real /handler.py).
+# Do NOT copy repo handler.py over it — that file is only for GitHub validation.
+CMD ["/start.sh"]
