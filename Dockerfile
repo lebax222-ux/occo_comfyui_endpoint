@@ -1,47 +1,33 @@
-FROM runpod/worker-comfyui:5.5.1-base
+# Qwen-Image-Edit-2511 serverless worker with models baked into the image.
+# Network volumes are NOT required.
+#
+# Build (must be linux/amd64 for RunPod):
+#   docker build --platform linux/amd64 -t YOUR_USER/qwen-image-edit-2511:latest .
+#
+# Image is large (~30GB+). Prefer RunPod "Start from GitHub Repo" if local disk is tight.
+FROM runpod/worker-comfyui:5.8.6-base
 
-# Set environment variables
-ENV COMFYUI_PATH=/comfyui
+# Diffusion — FP8 mixed (~20.5 GB). Use a 24GB+ GPU (e.g. RTX 4090).
+# For BF16 instead, swap the URL/filename to qwen_image_edit_2511_bf16.safetensors (~40 GB, needs 40GB+ VRAM).
+RUN comfy model download \
+    --url https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2511_fp8mixed.safetensors \
+    --relative-path models/diffusion_models \
+    --filename qwen_image_edit_2511_fp8mixed.safetensors
 
-# Install system dependencies needed for git/wget if not already present
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
+# Text encoder
+RUN comfy model download \
+    --url https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors \
+    --relative-path models/text_encoders \
+    --filename qwen_2.5_vl_7b_fp8_scaled.safetensors
 
-# Install ComfyUI-fal-API custom node
-WORKDIR ${COMFYUI_PATH}/custom_nodes
+# VAE
+RUN comfy model download \
+    --url https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors \
+    --relative-path models/vae \
+    --filename qwen_image_vae.safetensors
 
-RUN git clone https://github.com/gokayfem/ComfyUI-fal-API.git
-
-WORKDIR ${COMFYUI_PATH}/custom_nodes/ComfyUI-fal-API
-
-RUN python3 -m pip install --no-cache-dir -r requirements.txt
-
-# Download models
-WORKDIR ${COMFYUI_PATH}/models
-
-# Download text encoder
-RUN wget -q --show-progress \
-    https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors \
-    -O text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors
-
-# Download LoRA
-RUN wget -q --show-progress \
-    https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Edit-Lightning-4steps-V1.0-bf16.safetensors \
-    -O loras/Qwen-Image-Edit-Lightning-4steps-V1.0-bf16.safetensors
-
-# Download diffusion model
-RUN wget -q --show-progress \
-    https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_fp8_e4m3fn.safetensors \
-    -O diffusion_models/qwen_image_edit_fp8_e4m3fn.safetensors
-
-# Download VAE
-RUN wget -q --show-progress \
-    https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors \
-    -O vae/qwen_image_vae.safetensors
-
-# Download snorkel_lora
-RUN wget -q --show-progress \
-    https://huggingface.co/gugocco/snorkel_lora/resolve/main/snorkel_lora_v2.safetensors \
-    -O loras/snorkel_lora.safetensors
+# Lightning LoRA (4-step)
+RUN comfy model download \
+    --url https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors \
+    --relative-path models/loras \
+    --filename Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors
