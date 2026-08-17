@@ -33,6 +33,4 @@ RUN comfy model download \
     --relative-path models/loras \
     --filename Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors
 
-# Keep the official worker entrypoint (starts ComfyUI + real /handler.py).
-# Do NOT copy repo handler.py over it — that file is only for GitHub validation.
-CMD ["/start.sh"]
+
