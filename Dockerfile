@@ -33,4 +33,9 @@ RUN comfy model download \
     --relative-path models/loras \
     --filename Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors
 
+# Load Image From URL / Local Path
+RUN git clone --depth 1 \
+    https://github.com/tsogzark/ComfyUI-load-image-from-url.git \
+    /comfyui/custom_nodes/ComfyUI-load-image-from-url
+
 
